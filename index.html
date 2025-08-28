@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pregnancy Calculator (Cat)</title>
+  <style>
+    :root {
+      --blue: #2563eb;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --border: #d1d5db;
+      --text: #1f2937;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+    }
+    h1 {
+      text-align: center;
+      color: var(--blue);
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin: 12px 0 4px;
+      font-weight: bold;
+    }
+    input, select {
+      padding: 8px;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      width: 100%;
+      max-width: 260px;
+    }
+    button {
+      background: var(--blue);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-top: 16px;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+      line-height: 1.6;
+    }
+    .calendar {
+      margin-top: 20px;
+      font-size: 0.95rem;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pregnancy Calculator (Cat)</h1>
+
+  <div class="card">
+    <label for="method">계산 방법 선택</label>
+    <select id="method">
+      <option value="mating">교배일 기준</option>
+      <option value="hd">HD(cm) 측정</option>
+      <option value="bpd">BPD(mm) 측정</option>
+    </select>
+
+    <div id="inputBox"></div>
+    <button onclick="calculate()">계산하기</button>
+
+    <div class="result" id="resultBox"></div>
+    <div class="calendar" id="calendarBox"></div>
+  </div>
+
+  <script>
+    const methodEl = document.getElementById('method');
+    const inputBox = document.getElementById('inputBox');
+    const resultBox = document.getElementById('resultBox');
+    const calendarBox = document.getElementById('calendarBox');
+
+    methodEl.addEventListener('change', () => {
+      updateInputBox();
+      resultBox.innerHTML = '';
+      calendarBox.innerHTML = '';
+    });
+
+    function updateInputBox() {
+      const method = methodEl.value;
+      if (method === 'mating') {
+        inputBox.innerHTML = `<label for="date">교배일</label><input type="date" id="date">`;
+      } else if (method === 'hd') {
+        inputBox.innerHTML = `<label for="hd">HD (cm)</label><input type="number" id="hd" step="0.1" placeholder="예: 2.8">`;
+      } else if (method === 'bpd') {
+        inputBox.innerHTML = `<label for="bpd">BPD (mm)</label><input type="number" id="bpd" step="0.1" placeholder="예: 23.5">`;
+      }
+    }
+
+    function formatDate(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    function calculate() {
+      const method = methodEl.value;
+      let resultText = '';
+      let avgDate = null;
+      let startDate = null;
+      let endDate = null;
+
+      if (method === 'mating') {
+        const matingDate = new Date(document.getElementById('date').value);
+        if (isNaN(matingDate)) return alert('날짜를 입력하세요.');
+        avgDate = new Date(matingDate); avgDate.setDate(avgDate.getDate() + 64);
+        startDate = new Date(matingDate); startDate.setDate(startDate.getDate() + 58);
+        endDate = new Date(matingDate); endDate.setDate(endDate.getDate() + 67);
+        resultText = `예상 분만일: ${formatDate(avgDate)}\n정상 범위: ${formatDate(startDate)} ~ ${formatDate(endDate)}`;
+      } else if (method === 'hd') {
+        const hd = parseFloat(document.getElementById('hd').value);
+        if (isNaN(hd)) return alert('HD 값을 입력하세요.');
+        const GA = Math.round(25 * hd + 3);
+        const today = new Date();
+        avgDate = new Date(); avgDate.setDate(today.getDate() + (64 - GA));
+        startDate = new Date(); startDate.setDate(today.getDate() + (58 - GA));
+        endDate = new Date(); endDate.setDate(today.getDate() + (67 - GA));
+        resultText = `HD 기준 GA: ${GA}일\n예상 분만일: ${formatDate(avgDate)}\n정상 범위: ${formatDate(startDate)} ~ ${formatDate(endDate)}`;
+      } else if (method === 'bpd') {
+        const bpd = parseFloat(document.getElementById('bpd').value);
+        if (isNaN(bpd)) return alert('BPD 값을 입력하세요.');
+        const remain = Math.round((bpd - 23.39) / 0.47);
+        const today = new Date();
+        avgDate = new Date(); avgDate.setDate(today.getDate() + remain);
+        startDate = new Date(); startDate.setDate(avgDate.getDate() - 2);
+        endDate = new Date(); endDate.setDate(avgDate.getDate() + 2);
+        resultText = `BPD 기준 남은 일수: ${remain}일\n예상 분만일: ${formatDate(avgDate)}\n정상 범위: ${formatDate(startDate)} ~ ${formatDate(endDate)}`;
+      }
+
+      resultBox.innerText = resultText;
+
+      // Calendar Section
+      let cal = `📆 분만 예정일\n\n`;
+      cal += `ㆍ평균 예정일 : ${formatDate(avgDate)}\n`;
+      cal += `ㆍ정상 범위 : ${formatDate(startDate)} ~ ${formatDate(endDate)}\n`;
+      calendarBox.innerText = cal;
+    }
+
+    // 초기 input box 설정
+    updateInputBox();
+  </script>
+</body>
+</html>
